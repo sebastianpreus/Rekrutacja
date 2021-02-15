@@ -1,2 +1,2 @@
 # Rekrutacja
-Rekturacja
+Zadanie rekrutacyjne w firmie DRIT
