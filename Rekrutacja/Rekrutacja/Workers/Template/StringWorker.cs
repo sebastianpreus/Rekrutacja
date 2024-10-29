@@ -10,21 +10,21 @@ using Soneta.Types;
 using Rekrutacja.Workers.Template;
 
 //Rejetracja Workera - Pierwszy TypeOf określa jakiego typu ma być wyświetlany Worker, Drugi parametr wskazuje na jakim Typie obiektów będzie wyświetlany Worker
-[assembly: Worker(typeof(TemplateWorker), typeof(Pracownicy))]
+[assembly: Worker(typeof(StringWorker), typeof(Pracownicy))]
 namespace Rekrutacja.Workers.Template
 {
-    public class TemplateWorker
+    public class StringWorker
     {
         //Aby parametry działały prawidłowo dziedziczymy po klasie ContextBase
-        public class TemplateWorkerParametry : ContextBase
+        public class StringWorkerParametry : ContextBase
         {
             [Caption("Data obliczeń")]
             public Date DataObliczen { get; set; }
 
-            public int A { get; set; }
-            public int B { get; set; }
+            public string A { get; set; }
+            public string B { get; set; }
             public string Operacja  { get; set; }
-            public TemplateWorkerParametry(Context context) : base(context)
+            public StringWorkerParametry(Context context) : base(context)
             {
                 this.DataObliczen = Date.Today;
             }
@@ -35,10 +35,10 @@ namespace Rekrutacja.Workers.Template
         public Context Cx { get; set; }
         //Pobieramy z Contextu parametry, jeżeli nie ma w Context Parametrów mechanizm sam utworzy nowy obiekt oraz wyświetli jego formatkę
         [Context]
-        public TemplateWorkerParametry Parametry { get; set; }
+        public StringWorkerParametry Parametry { get; set; }
         //Atrybut Action - Wywołuje nam metodę która znajduje się poniżej
-        [Action("Kalkulator",
-           Description = "Prosty kalkulator ",
+        [Action("Kalkulator Stringi",
+           Description = "Kalkulator Stringi",
            Priority = 10,
            Mode = ActionMode.ReadOnlySession,
            Icon = ActionIcon.Accept,
@@ -58,7 +58,7 @@ namespace Rekrutacja.Workers.Template
                     //Otwieramy Transaction aby można było edytować obiekt z sesji
                     using (ITransaction trans = nowaSesja.Logout(true))
                     {
-                        double wynik = Oblicz(this.Parametry.A, this.Parametry.B, this.Parametry.Operacja);
+                        double wynik = Oblicz(this.Parametry.A.ConvertToInt(), this.Parametry.B.ConvertToInt(), this.Parametry.Operacja);
                         foreach (Pracownik pracownik in pracownicy)
                         {
                             //Pobieramy obiekt z Nowo utworzonej sesji
@@ -76,7 +76,7 @@ namespace Rekrutacja.Workers.Template
             }
         }
 
-        public double Oblicz(double A, double B, string operacja)
+        public double Oblicz(int A, int B, string operacja)
         {
             double wynik = 0;
 

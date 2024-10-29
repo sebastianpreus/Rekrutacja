@@ -10,21 +10,26 @@ using Soneta.Types;
 using Rekrutacja.Workers.Template;
 
 //Rejetracja Workera - Pierwszy TypeOf określa jakiego typu ma być wyświetlany Worker, Drugi parametr wskazuje na jakim Typie obiektów będzie wyświetlany Worker
-[assembly: Worker(typeof(TemplateWorker), typeof(Pracownicy))]
+[assembly: Worker(typeof(ObliczFiguryWorker), typeof(Pracownicy))]
 namespace Rekrutacja.Workers.Template
 {
-    public class TemplateWorker
+    public class ObliczFiguryWorker
     {
+        public enum FiguraEnum
+        {
+            kwadrat, prostokąt, trójkąt, koło
+        }
         //Aby parametry działały prawidłowo dziedziczymy po klasie ContextBase
-        public class TemplateWorkerParametry : ContextBase
+        public class ObliczFiguryWorkerParametry : ContextBase
         {
             [Caption("Data obliczeń")]
             public Date DataObliczen { get; set; }
-
+            [Caption("A (r - dla powierzchni koła)")]
             public int A { get; set; }
+            [Caption("B (h - dla powierzchni trójkąta)")]
             public int B { get; set; }
-            public string Operacja  { get; set; }
-            public TemplateWorkerParametry(Context context) : base(context)
+            public FiguraEnum Figura { get; set; }
+            public ObliczFiguryWorkerParametry(Context context) : base(context)
             {
                 this.DataObliczen = Date.Today;
             }
@@ -35,10 +40,10 @@ namespace Rekrutacja.Workers.Template
         public Context Cx { get; set; }
         //Pobieramy z Contextu parametry, jeżeli nie ma w Context Parametrów mechanizm sam utworzy nowy obiekt oraz wyświetli jego formatkę
         [Context]
-        public TemplateWorkerParametry Parametry { get; set; }
+        public ObliczFiguryWorkerParametry Parametry { get; set; }
         //Atrybut Action - Wywołuje nam metodę która znajduje się poniżej
-        [Action("Kalkulator",
-           Description = "Prosty kalkulator ",
+        [Action("Kalkulator figur",
+           Description = "Kalkulator pola powierzchni",
            Priority = 10,
            Mode = ActionMode.ReadOnlySession,
            Icon = ActionIcon.Accept,
@@ -58,13 +63,13 @@ namespace Rekrutacja.Workers.Template
                     //Otwieramy Transaction aby można było edytować obiekt z sesji
                     using (ITransaction trans = nowaSesja.Logout(true))
                     {
-                        double wynik = Oblicz(this.Parametry.A, this.Parametry.B, this.Parametry.Operacja);
+                        int wynik = Oblicz(this.Parametry.A, this.Parametry.B, this.Parametry.Figura);
                         foreach (Pracownik pracownik in pracownicy)
                         {
                             //Pobieramy obiekt z Nowo utworzonej sesji
                             var pracownikZSesja = nowaSesja.Get(pracownik);
                             //Features - są to pola rozszerzające obiekty w bazie danych, dzięki czemu nie jestesmy ogarniczeni to kolumn jakie zostały utworzone przez producenta
-                            pracownikZSesja.Features["Wynik"] = wynik;
+                            pracownikZSesja.Features["Wynik"] = (double)wynik;
                             pracownikZSesja.Features["DataObliczen"] = this.Parametry.DataObliczen;
                             //Zatwierdzamy zmiany wykonane w sesji
                             trans.CommitUI();
@@ -76,28 +81,25 @@ namespace Rekrutacja.Workers.Template
             }
         }
 
-        public double Oblicz(double A, double B, string operacja)
+        public int Oblicz(double A, double B, FiguraEnum figura)
         {
-            double wynik = 0;
+            int wynik = 0;
 
-            switch (operacja)
+            switch (figura)
             {
-                case "+":
-                    wynik = A + B; 
+                case FiguraEnum.kwadrat:
+                case FiguraEnum.prostokąt:
+                    wynik = (int)(A * B);
                     break;
-                case "-": 
-                    wynik = A - B;
+                case FiguraEnum.trójkąt:
+                    wynik = (int)((A * B) / 2);
                     break;
-                case "*": 
-                    wynik = A * B;
-                    break;
-                case "/": 
-                    wynik = A / B;
+                case FiguraEnum.koło:
+                    wynik = (int)(Math.PI * (A * A));
                     break;
                 default:
                     break;
             }
-
             return wynik;
         }
     }
